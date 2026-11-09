@@ -1,6 +1,6 @@
 {
   "name": "react-native-nitro-kanjivg-tgfx",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Kanji drawing lib",
   "main": "./lib/module/index.js",
   "types": "./lib/typescript/src/index.d.ts",
