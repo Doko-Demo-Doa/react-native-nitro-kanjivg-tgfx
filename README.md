@@ -4,16 +4,13 @@ Kanji drawing lib
 
 ## Installation
 
-
 ```sh
 npm install react-native-kanjivg-tgfx react-native-nitro-modules
 ```
 
 > `react-native-nitro-modules` is required as this library relies on [Nitro Modules](https://nitro.margelo.com/).
 
-
 ## Usage
-
 
 ```js
 import { multiply } from 'react-native-kanjivg-tgfx';
@@ -22,7 +19,6 @@ import { multiply } from 'react-native-kanjivg-tgfx';
 
 const result = multiply(3, 7);
 ```
-
 
 ## Contributing
 

@@ -1,16 +1,21 @@
 pre-commit:
   parallel: true
   commands:
+    fmt:
+      glob: '*.{js,jsx,ts,tsx,json,md}'
+      run: pnpm exec oxfmt {staged_files}
+      stage_fixed: true
 
     lint:
-      glob: "*.{js,ts,jsx,tsx}"
-      run: npx eslint {staged_files}
+      glob: '*.{js,ts,jsx,tsx}'
+      run: pnpm exec oxlint {staged_files}
 
     types:
-      glob: "*.{js,ts,jsx,tsx}"
-      run: npx tsc
+      glob: '*.{js,ts,jsx,tsx}'
+      run: pnpm exec tsc
+
 commit-msg:
   parallel: true
   commands:
     commitlint:
-      run: npx commitlint --edit
+      run: pnpm exec commitlint --edit
