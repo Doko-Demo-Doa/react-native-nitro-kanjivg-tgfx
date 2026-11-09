@@ -229,7 +229,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
-MIT (code) · KanjiVG stroke data is CC BY-SA 4.0 — see [DATA-LICENSE.md](./DATA-LICENSE.md).
+MIT (code) · KanjiVG stroke data is CC BY-SA — see [DATA-LICENSE.md](./DATA-LICENSE.md).
 
 ---
 
