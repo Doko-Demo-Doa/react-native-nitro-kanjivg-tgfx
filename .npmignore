@@ -1,0 +1,28 @@
+# Published package: keep only what consumers install (see "files" in package.json).
+# package.json "files" is the primary allowlist; this file double-guards the
+# published tarball in case "files" is ever removed or loosened.
+
+# Repo-only assets
+/example/
+/img/
+/.github/
+/patches/
+/KANJIVG_PLAN.md
+/DATA-LICENSE.md
+/CONTRIBUTING.md
+
+# Tooling / caches
+/coverage/
+/.turbo/
+/node_modules/
+/tsconfig.tsbuildinfo
+*.tsbuildinfo
+*.tgz
+
+# Editors / OS
+/.vscode/
+/.idea/
+.DS_Store
+
+# Keep source maps shipped for stack traces (do NOT ignore):
+#   lib/**/{*.map,*.d.ts.map}
