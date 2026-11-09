@@ -24,8 +24,6 @@ if (project.extensions.findByName("kotlin") == null) {
 
 apply from: '../nitrogen/generated/android/kanjivgtgfx+autolinking.gradle'
 
-apply plugin: "com.facebook.react"
-
 android {
   namespace "com.margelo.nitro.kanjivgtgfx"
 
