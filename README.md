@@ -6,13 +6,17 @@ Animated Kanji (CJK glyph) viewer for React Native, powered by
 
 ![Kanji render loadout](./img/loadout.jpg)
 
-▶️ **Demo:** stroke-by-step, stroke-order numbers, live styling and speed controls — [`img/rn-kanjivg.mp4`](./img/rn-kanjivg.mp4)
+**Demo — stroke-by-step, stroke-order numbers, live styling and speed controls:**
+
+![Stroke animation demo](./img/rn-kanjivg.gif)
+
+_Full-quality recording: [`img/rn-kanjivg.mp4`](./img/rn-kanjivg.mp4)_
 
 - 📂 **Zero codegen** — drop KanjiVG `.svg` files in a folder of your app and render them directly
 - 🔎 Look glyphs up **by character** (`<Kanji character="漢" … />`) via a directory source
 - 🎨 Per-stroke styling and visibility, stroke-order number labels, speed control
 - ✍️ Imperative write-on animation (`play` / `pause` / `seekTo` / `setSpeed`, looping)
-- ⚡ GPU-rendered through tgfx (Skia-class), parsing memoized per glyph
+- ⚡ GPU-rendered through via `react-native-tgfx` and Nitro Modules for maximum performance, parsing memoized per glyph
 
 ## Installation
 
