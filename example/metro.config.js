@@ -1,7 +1,7 @@
 const path = require('path');
 const { getDefaultConfig } = require('@expo/metro-config');
 const { withMetroConfig } = require('react-native-monorepo-config');
-// In-app usage would be `require('react-native-kanjivg-tgfx/metro')`; the
+// In-app usage would be `require('react-native-nitro-kanjivg-tgfx/metro')`; the
 // monorepo example requires the source file directly.
 const { withKanjiSvgMetroConfig } = require('../metro/index.cjs');
 
@@ -16,7 +16,7 @@ const root = path.resolve(__dirname, '..');
 const config = withMetroConfig(getDefaultConfig(__dirname), {
   root,
   dirname: __dirname,
-  conditions: ['react-native-kanjivg-tgfx-source'],
+  conditions: ['react-native-nitro-kanjivg-tgfx-source'],
 });
 
 // Bundles `example/assets/kanji/*.svg` as raw text so the Kanji component can

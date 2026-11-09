@@ -2,12 +2,12 @@
   "compilerOptions": {
     "rootDir": ".",
     "paths": {
-      "react-native-kanjivg-tgfx": ["./src/index"]
+      "react-native-nitro-kanjivg-tgfx": ["./src/index"]
     },
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
     "customConditions": [
-      "react-native-kanjivg-tgfx-source",
+      "react-native-nitro-kanjivg-tgfx-source",
       "react-native-strict-api"
     ],
     "esModuleInterop": true,

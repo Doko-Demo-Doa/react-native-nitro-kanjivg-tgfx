@@ -4,6 +4,7 @@ export { Kanji } from './kanjivg/Kanji';
 export type {
   KanjiHandle,
   KanjiProps,
+  KanjiStrokeNumberStyle,
   KanjiStrokeStyle,
 } from './kanjivg/Kanji';
 

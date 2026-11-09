@@ -1,12 +1,12 @@
 {
-  "name": "react-native-kanjivg-tgfx",
+  "name": "react-native-nitro-kanjivg-tgfx",
   "version": "0.1.0",
   "description": "Kanji drawing lib",
   "main": "./lib/module/index.js",
   "types": "./lib/typescript/src/index.d.ts",
   "exports": {
     ".": {
-      "react-native-kanjivg-tgfx-source": "./src/index.tsx",
+      "react-native-nitro-kanjivg-tgfx-source": "./src/index.tsx",
       "types": "./lib/typescript/src/index.d.ts",
       "default": "./lib/module/index.js"
     },
@@ -35,7 +35,7 @@
     "!**/.*"
   ],
   "scripts": {
-    "example": "pnpm --filter react-native-kanjivg-tgfx-example",
+    "example": "pnpm --filter react-native-nitro-kanjivg-tgfx-example",
     "clean": "del-cli lib",
     "prepare": "bob build",
     "nitrogen": "nitrogen",
@@ -133,7 +133,7 @@
       "customExportConditions": [
         "require",
         "react-native",
-        "react-native-kanjivg-tgfx-source"
+        "react-native-nitro-kanjivg-tgfx-source"
       ]
     },
     "modulePathIgnorePatterns": [

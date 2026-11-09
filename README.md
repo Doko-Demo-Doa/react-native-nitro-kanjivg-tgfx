@@ -1,4 +1,4 @@
-# react-native-kanjivg-tgfx
+# react-native-nitro-kanjivg-tgfx
 
 Animated Kanji (CJK glyph) viewer for React Native, powered by
 [react-native-tgfx](https://tgfx.margelo.com) and
@@ -12,7 +12,7 @@ Animated Kanji (CJK glyph) viewer for React Native, powered by
 ## Installation
 
 ```sh
-pnpm add react-native-kanjivg-tgfx react-native-nitro-modules react-native-tgfx
+pnpm add react-native-nitro-kanjivg-tgfx react-native-nitro-modules react-native-tgfx
 ```
 
 `react-native-tgfx` also expects its animation peers when installed (peer resolution):
@@ -45,7 +45,7 @@ For Expo, install the **Expo Go-incompatible** Nitro modules as above and use a 
    // metro.config.js
    const {
      withKanjiSvgMetroConfig,
-   } = require('react-native-kanjivg-tgfx/metro');
+   } = require('react-native-nitro-kanjivg-tgfx/metro');
    const {
      getDefaultConfig,
      mergeConfig,
@@ -65,14 +65,14 @@ For Expo, install the **Expo Go-incompatible** Nitro modules as above and use a 
    > If you can't touch the Metro config, keep SVGs working as image assets out of
 
 > the way by naming files `漢.kanji.svg` and using a transformer of your choice —
-> `react-native-kanjivg-tgfx` accepts raw strings, `{ body }` and `{ default }` modules.
+> `react-native-nitro-kanjivg-tgfx` accepts raw strings, `{ body }` and `{ default }` modules.
 
 ## Usage
 
 ### Look glyphs up by character
 
 ```tsx
-import { Kanji, createKanjiSource } from 'react-native-kanjivg-tgfx';
+import { Kanji, createKanjiSource } from 'react-native-nitro-kanjivg-tgfx';
 
 // require.context must be called from app code — the folder path has to be a
 // static literal Metro can see at build time.
@@ -90,7 +90,7 @@ export function Glyph() {
 ### Or point at a single file
 
 ```tsx
-import { Kanji } from 'react-native-kanjivg-tgfx';
+import { Kanji } from 'react-native-nitro-kanjivg-tgfx';
 
 export function Glyph() {
   return (
@@ -125,7 +125,7 @@ path trims — no JS re-renders while writing).
 
 ```tsx
 import { useRef } from 'react';
-import { Kanji, type KanjiHandle } from 'react-native-kanjivg-tgfx';
+import { Kanji, type KanjiHandle } from 'react-native-nitro-kanjivg-tgfx';
 
 const kanjiRef = useRef<KanjiHandle>(null);
 
@@ -138,6 +138,7 @@ const kanjiRef = useRef<KanjiHandle>(null);
   file={requiredSvg}
   animated
   animationDuration={3000} // one full pass, ms (default ~260ms per stroke)
+  speed={1.5}               // global pen-speed multiplier (imperative: setSpeed / setStrokeSpeed)
   onAnimationEnd={() => console.log('done writing')}
   width={200}
   height={200}
@@ -152,16 +153,39 @@ kanjiRef.current?.restart(); // jump to empty and play
 Animation requires `react-native-reanimated` and `react-native-worklets`
 (peer dependencies; included in every Expo SDK ≥ 54 template).
 
+### Per-stroke and per-label control
+
+```tsx
+<Kanji
+  character="漢"
+  source={kanjis}
+  stroke={{ color: '#227093' }}
+  strokes={{
+    3: { color: '#d63031', width: 5 }, // style one stroke
+    7: { visible: false }, // hide one (also drops it from the
+    // ghost layer + animation timeline)
+  }}
+  showStrokeNumbers
+  strokeNumbers={{
+    3: { color: '#d63031' }, // style a label (labels follow hidden strokes)
+    13: { visible: false }, // hide a label
+  }}
+/>
+```
+
 ## API
 
-| Export                                                             | What it does                                                                           |
-| ------------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
-| `<Kanji />`                                                        | Renders one KanjiVG glyph with tgfx, optionally animated write-on                      |
-| `KanjiHandle` (type)                                               | Imperative animation control: `play`/`pause`/`restart`/`seekTo`/`isPlaying`            |
-| `createKanjiSource(ctx)`                                           | Character ⇄ asset lookup over a `require.context` of your kanji folder                 |
-| `loadKanjiSvg(input)`                                              | Parse (memoized) a bundled SVG module or raw text yourself — e.g. for custom rendering |
-| `parseKanjiSvg(xml)`                                               | Low-level KanjiVG parser (`{ viewBox, strokes }`)                                      |
-| `withKanjiSvgMetroConfig` (from `react-native-kanjivg-tgfx/metro`) | Metro wiring so `.svg` files bundle as text                                            |
+| Export                                                                   | What it does                                                                                |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
+| `<Kanji />`                                                              | Renders one KanjiVG glyph with tgfx, optionally animated write-on                           |
+| `showStrokeNumbers` prop                                                 | Draws KanjiVG's stroke-order number labels (1, 2, 3, ...) at each stroke                    |
+| `strokes={{ n: { visible: false, ... } }}`                               | Per-stroke show/hide + styling (colour, width, cap/join, opacity) keyed by stroke no.       |
+| `strokeNumbers={{ n: { visible: false, ... } }}`                         | Per-label show/hide + styling (colour, opacity, size) for the stroke-order numbers          |
+| `KanjiHandle` (type)                                                     | Imperative animation control: `play`/`pause`/`restart`/`seekTo`/`setSpeed`/`setStrokeSpeed` |
+| `createKanjiSource(ctx)`                                                 | Character ⇄ asset lookup over a `require.context` of your kanji folder                      |
+| `loadKanjiSvg(input)`                                                    | Parse (memoized) a bundled SVG module or raw text yourself — e.g. for custom rendering      |
+| `parseKanjiSvg(xml)`                                                     | Low-level KanjiVG parser (`{ viewBox, strokes }`)                                           |
+| `withKanjiSvgMetroConfig` (from `react-native-nitro-kanjivg-tgfx/metro`) | Metro wiring so `.svg` files bundle as text                                                 |
 
 ## Troubleshooting
 

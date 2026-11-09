@@ -8,15 +8,26 @@
  * `<text>` label per stroke, which doubles as a consistency check.
  *
  * Only the pieces this renderer needs are extracted (viewBox + stroke `d`
- * strings); radical grouping, stroke-type metadata and number positions are
- * intentionally ignored.
+ * strings, and the stroke-number label positions); radical grouping and
+ * stroke-type metadata are intentionally ignored.
  */
+
+/** One stroke-order number label and where KanjiVG places it. */
+export interface KanjiStrokeNumber {
+  /** 1-based stroke number. */
+  readonly number: number;
+  /** Baseline position in viewBox units. */
+  readonly x: number;
+  readonly y: number;
+}
 
 export interface KanjiSvg {
   /** SVG viewBox attribute, e.g. `0 0 109 109`. */
   readonly viewBox: string;
   /** Stroke path data (`d` attributes) in stroke order. */
   readonly strokes: readonly string[];
+  /** Stroke-order labels; empty when the file has no "StrokeNumbers" group. */
+  readonly strokeNumbers: readonly KanjiStrokeNumber[];
 }
 
 function fail(source: string, message: string): never {
@@ -109,15 +120,36 @@ export function parseKanjiSvg(xml: string, source = 'kanji svg'): KanjiSvg {
   }
 
   const numbersAt = xml.indexOf('StrokeNumbers');
+  const strokeNumbers: KanjiStrokeNumber[] = [];
   if (numbersAt >= 0) {
+    const numbersSection = xml.slice(numbersAt);
     let numberCount = 0;
     const textRe = /<text\b/gi;
-    while (textRe.exec(xml.slice(numbersAt)) !== null) numberCount += 1;
+    while (textRe.exec(numbersSection) !== null) numberCount += 1;
     if (numberCount !== strokes.length) {
       return fail(
         source,
         `stroke-number labels (${numberCount}) do not match stroke paths (${strokes.length})`
       );
+    }
+    // KanjiVG positions labels with a pure-translation SVG matrix; some
+    // files use x/y attributes instead.
+    const labelRe =
+      /<text\b([^>]*)>\s*(?:<tspan[^>]*>)?\s*([0-9]+)\s*(?:<\/tspan>)?\s*<\/text>/gi;
+    let label: RegExpExecArray | null;
+    while ((label = labelRe.exec(numbersSection)) !== null) {
+      const attrs = label[1] ?? '';
+      const matrix =
+        /matrix\(\s*1\s+0\s+0\s+1\s+([-\d.]+)[\s,]+([-\d.]+)/i.exec(attrs);
+      const x = matrix?.[1] ?? /\bx="([-\d.]+)"/.exec(attrs)?.[1];
+      const y = matrix?.[2] ?? /\by="([-\d.]+)"/.exec(attrs)?.[1];
+      if (x != null && y != null) {
+        strokeNumbers.push({
+          number: Number.parseInt(label[2]!, 10),
+          x: Number.parseFloat(x),
+          y: Number.parseFloat(y),
+        });
+      }
     }
   }
 
@@ -137,7 +169,7 @@ export function parseKanjiSvg(xml: string, source = 'kanji svg'): KanjiSvg {
     );
   }
 
-  return { viewBox, strokes };
+  return { viewBox, strokes, strokeNumbers };
 }
 
 /** Parses an SVG `viewBox` string ("minx miny width height") into a rect. */

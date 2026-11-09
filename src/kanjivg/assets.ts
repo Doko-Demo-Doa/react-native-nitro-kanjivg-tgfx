@@ -67,7 +67,7 @@ export function readSvgModule(mod: unknown, source: string): string {
 }
 
 function fail(source: string, message: string): never {
-  throw new Error(`react-native-kanjivg-tgfx (${source}): ${message}`);
+  throw new Error(`react-native-nitro-kanjivg-tgfx (${source}): ${message}`);
 }
 
 /** Strip directory parts and extension: `./dir/魂.kanji.svg` -> `魂.kanji`. */

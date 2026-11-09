@@ -8,7 +8,7 @@ import {
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
-import { Canvas, Group, Path } from 'react-native-tgfx';
+import { Canvas, Group, Path, Text } from 'react-native-tgfx';
 import { scheduleOnRN, scheduleOnUI } from 'react-native-worklets';
 import type { StyleProp, ViewStyle } from 'react-native';
 import type { Transform as GroupTransform } from 'react-native-tgfx';
@@ -32,6 +32,24 @@ export interface KanjiStrokeStyle {
   strokeJoin?: 'miter' | 'round' | 'bevel';
   /** Overall stroke opacity 0..1. */
   opacity?: number;
+  /**
+   * Hide this stroke entirely (only meaningful in per-stroke `strokes`
+   * overrides). Hidden strokes drop out of the ghost layer and consume no
+   * writing time in animation.
+   */
+  visible?: boolean;
+}
+
+/** Per-label override for a stroke-order number (1-based key). */
+export interface KanjiStrokeNumberStyle {
+  /** Show/hide this label. Defaults to following its stroke's visibility. */
+  visible?: boolean;
+  /** Label colour; defaults to `strokeNumberColor`. */
+  color?: string;
+  /** Label opacity; defaults to `strokeNumberOpacity`. */
+  opacity?: number;
+  /** Label size in viewBox units; defaults to KanjiVG's 8. */
+  fontSize?: number;
 }
 
 /** Imperative write-on animation control (requires the `animated` prop). */
@@ -45,6 +63,16 @@ export interface KanjiHandle {
   /** Jump to a global progress in 0..1 and pause there. */
   seekTo(progress: number): void;
   isPlaying(): boolean;
+  /**
+   * Global pen-speed multiplier (1 = normal, 2 = twice as fast). Applies
+   * immediately, even mid-write, resuming from the current pen position.
+   */
+  setSpeed(speed: number): void;
+  /**
+   * Speed multiplier for one stroke (1-based number; 2 = that stroke draws
+   * twice as fast, shortening the rest of the pass accordingly).
+   */
+  setStrokeSpeed(strokeNumber: number, speed: number): void;
 }
 
 export interface KanjiProps {
@@ -86,10 +114,25 @@ export interface KanjiProps {
   loop?: boolean;
   /** Duration of one full writing pass, ms. Defaults to ~260ms per stroke. */
   animationDuration?: number;
+  /** Global pen-speed multiplier: 1 = normal, 2 = twice as fast. */
+  speed?: number;
   /** Called (JS thread) after each completed pass — also between loops. */
   onAnimationEnd?: () => void;
   /** Imperative animation control (`play`/`pause`/`restart`/`seekTo`). */
   ref?: React.Ref<KanjiHandle>;
+
+  /**
+   * Draw KanjiVG's stroke-order number labels (1, 2, 3, …) at each stroke's
+   * official label position. Requires the SVG to carry a `StrokeNumbers`
+   * group (plain KanjiVG files do).
+   */
+  showStrokeNumbers?: boolean;
+  /** Label colour. Defaults to KanjiVG's `#808080`. */
+  strokeNumberColor?: string;
+  /** Label opacity. Defaults to 1. */
+  strokeNumberOpacity?: number;
+  /** Per-label overrides (show/hide, colour, size), keyed by stroke number. */
+  strokeNumbers?: Record<number, KanjiStrokeNumberStyle | undefined>;
 }
 
 /** Handle exposed by the glyph to the outer component's `KanjiHandle`. */
@@ -99,6 +142,52 @@ interface GlyphHandle {
   restart(): void;
   seekTo(progress: number): void;
   isPlaying(): boolean;
+  setSpeed(speed: number): void;
+  setStrokeSpeed(strokeNumber: number, speed: number): void;
+}
+
+const clampSpeed = (n: number) =>
+  Number.isFinite(n) ? Math.min(100, Math.max(0.01, n)) : 1;
+
+/**
+ * Lay out the handwriting timeline from per-stroke length shares, per-stroke
+ * speed multipliers and visibility. Hidden strokes drop out; faster strokes
+ * give their saved time back to the pass. Pure + exported for tests.
+ */
+export function computeWriteTiming(
+  timings: readonly KanjiStrokeTiming[],
+  strokeVisible: readonly boolean[],
+  strokeSpeed: readonly number[],
+  baseMs: number,
+  speed: number
+): {
+  segments: (KanjiStrokeTiming | undefined)[] | null;
+  totalMs: number;
+} {
+  const weights: number[] = [];
+  let totalW = 0;
+  for (let i = 0; i < timings.length; i += 1) {
+    const w = strokeVisible[i]
+      ? Math.max(timings[i]!.end - timings[i]!.start, 1e-6) /
+        Math.min(100, Math.max(0.01, strokeSpeed[i] || 1))
+      : 0;
+    weights.push(w);
+    totalW += w;
+  }
+  const totalMs =
+    totalW > 0
+      ? (baseMs * totalW) / Math.min(100, Math.max(0.01, speed))
+      : baseMs;
+  if (totalW <= 0) return { segments: null, totalMs: baseMs };
+  const segments: (KanjiStrokeTiming | undefined)[] = [];
+  let cursor = 0;
+  for (const w of weights) {
+    segments.push(
+      w > 0 ? { start: cursor / totalW, end: (cursor + w) / totalW } : undefined
+    );
+    cursor += w;
+  }
+  return { segments, totalMs };
 }
 
 type Paint = Record<string, unknown>;
@@ -150,6 +239,11 @@ function KanjiGlyph({
   stroke,
   strokes,
   background,
+  showStrokeNumbers,
+  strokeNumberColor,
+  strokeNumberOpacity,
+  strokeNumbers,
+  speed,
 }: {
   svg: KanjiSvg;
   timings: readonly KanjiStrokeTiming[];
@@ -165,12 +259,46 @@ function KanjiGlyph({
   stroke: KanjiStrokeStyle | undefined;
   strokes: Record<number, KanjiStrokeStyle | undefined> | undefined;
   background: KanjiStrokeStyle | undefined;
+  showStrokeNumbers: boolean;
+  strokeNumberColor: string;
+  strokeNumberOpacity: number;
+  strokeNumbers: Record<number, KanjiStrokeNumberStyle | undefined> | undefined;
+  speed: number;
 }) {
+  // Imperative speed overrides (JS state; feeding the recomputed plan).
+  const [speedOverrides, setSpeedOverrides] = React.useState<{
+    global?: number;
+    perStroke: Record<number, number>;
+  }>({ perStroke: {} });
+
   const progress = useSharedValue(0);
   const playingSv = useSharedValue(false);
   // Duration must live in a shared value for UI worklets.
   const durationSv = useSharedValue(durationMs);
   const loopSv = useSharedValue(loop);
+
+  const isVisible = (strokeNo: number) =>
+    strokes?.[strokeNo]?.visible !== false;
+  const shownIdx: number[] = [];
+  for (let i = 0; i < svg.strokes.length; i += 1) {
+    if (isVisible(i + 1)) shownIdx.push(i);
+  }
+
+  // One plan for the handwriting timeline: visibility + per-stroke and
+  // global speed multipliers. Re-derived on the JS thread; cheap.
+  const globalSpeed = clampSpeed(speedOverrides.global ?? speed);
+  const plan = computeWriteTiming(
+    timings,
+    svg.strokes.map((_, i) => isVisible(i + 1)),
+    svg.strokes.map((_, i) => speedOverrides.perStroke[i + 1] ?? 1),
+    durationMs,
+    globalSpeed
+  );
+  const segments = animated ? plan.segments : null;
+  const planKey = animated
+    ? `${plan.totalMs.toFixed(1)}|${plan.segments?.map((seg) => seg && seg.start.toFixed(4)).join(',')}`
+    : '';
+
   // JS-side mirror of play state (decisions originate in JS).
   const playingRef = React.useRef(false);
   const loopRef = React.useRef(loop);
@@ -247,9 +375,37 @@ function KanjiGlyph({
 
   const isPlaying = React.useCallback(() => playingRef.current, []);
 
+  const setSpeed = React.useCallback(
+    (multiplier: number) =>
+      setSpeedOverrides((prev) => ({
+        ...prev,
+        global: clampSpeed(multiplier),
+      })),
+    []
+  );
+  const setStrokeSpeed = React.useCallback(
+    (strokeNumber: number, multiplier: number) =>
+      setSpeedOverrides((prev) => ({
+        ...prev,
+        perStroke: {
+          ...prev.perStroke,
+          [strokeNumber]: clampSpeed(multiplier),
+        },
+      })),
+    []
+  );
+
   const methods = React.useMemo<GlyphHandle>(
-    () => ({ play, pause, restart, seekTo, isPlaying }),
-    [play, pause, restart, seekTo, isPlaying]
+    () => ({
+      play,
+      pause,
+      restart,
+      seekTo,
+      isPlaying,
+      setSpeed,
+      setStrokeSpeed,
+    }),
+    [play, pause, restart, seekTo, isPlaying, setSpeed, setStrokeSpeed]
   );
 
   // Refs synced in effects only; shared values sync via a worklet.
@@ -258,10 +414,21 @@ function KanjiGlyph({
     onEndRef.current = onAnimationEnd;
     scheduleOnUI(() => {
       'worklet';
-      durationSv.set(durationMs);
+      durationSv.set(plan.totalMs);
       loopSv.set(loop);
     });
   });
+
+  // Speed/visibility changes re-arm the driver at the current pen position.
+  const planKeyRef = React.useRef(planKey);
+  React.useEffect(() => {
+    const changed = planKeyRef.current !== planKey;
+    planKeyRef.current = planKey;
+    if (changed && playingRef.current) {
+      pause();
+      play();
+    }
+  }, [planKey, pause, play]);
 
   // `loop` is baked in at pass start, so a mid-write toggle re-arms the driver.
   const loopModeRef = React.useRef(loop);
@@ -305,9 +472,6 @@ function KanjiGlyph({
     { scale },
   ];
 
-  // No trims unless the glyph animates.
-  const segments = animated ? timings : null;
-
   return (
     <Canvas style={{ width, height }}>
       <Group transform={transform}>
@@ -317,11 +481,12 @@ function KanjiGlyph({
             strokeWidth={(background.width ?? stroke?.width ?? 3) * scale}
             color={background.color ?? '#d0d0d0'}
             opacity={background.opacity ?? 1}
-            path={svg.strokes.join(' ')}
+            path={shownIdx.map((i) => svg.strokes[i]).join(' ')}
           />
         ) : null}
         {svg.strokes.map((d, i) => {
           const override = strokes?.[i + 1];
+          if (override?.visible === false) return null;
           const paint: Paint = {
             ...shared,
             color: override?.color ?? shared.color,
@@ -340,6 +505,26 @@ function KanjiGlyph({
             />
           );
         })}
+        {showStrokeNumbers
+          ? svg.strokeNumbers.map((n) => {
+              const label = strokeNumbers?.[n.number];
+              // Labels follow their stroke unless the override says otherwise.
+              if ((label?.visible ?? isVisible(n.number)) === false) {
+                return null;
+              }
+              return (
+                <Text
+                  key={n.number}
+                  x={n.x}
+                  y={n.y}
+                  text={String(n.number)}
+                  fontSize={label?.fontSize ?? 8}
+                  color={label?.color ?? strokeNumberColor}
+                  opacity={label?.opacity ?? strokeNumberOpacity}
+                />
+              );
+            })
+          : null}
       </Group>
     </Canvas>
   );
@@ -383,8 +568,13 @@ export function Kanji({
   autoPlay = false,
   loop = false,
   animationDuration,
+  speed = 1,
   onAnimationEnd,
   ref,
+  showStrokeNumbers = false,
+  strokeNumberColor = '#808080',
+  strokeNumberOpacity = 1,
+  strokeNumbers,
 }: KanjiProps): React.JSX.Element | null {
   const glyphHandle = React.useRef<GlyphHandle | null>(null);
 
@@ -396,6 +586,10 @@ export function Kanji({
       restart: () => glyphHandle.current?.restart(),
       seekTo: (progress: number) => glyphHandle.current?.seekTo(progress),
       isPlaying: () => glyphHandle.current?.isPlaying() ?? false,
+      setSpeed: (multiplier: number) =>
+        glyphHandle.current?.setSpeed(multiplier),
+      setStrokeSpeed: (strokeNumber: number, multiplier: number) =>
+        glyphHandle.current?.setStrokeSpeed(strokeNumber, multiplier),
     }),
     []
   );
@@ -453,6 +647,7 @@ export function Kanji({
           animationDuration ?? Math.max(600, svg.strokes.length * 260)
         }
         onAnimationEnd={onAnimationEnd}
+        speed={speed}
         glyphHandle={glyphHandle}
         width={width}
         height={height}
@@ -460,6 +655,10 @@ export function Kanji({
         stroke={stroke}
         strokes={strokes}
         background={background === false ? undefined : background}
+        showStrokeNumbers={showStrokeNumbers}
+        strokeNumberColor={strokeNumberColor}
+        strokeNumberOpacity={strokeNumberOpacity}
+        strokeNumbers={strokeNumbers}
       />
     </View>
   );

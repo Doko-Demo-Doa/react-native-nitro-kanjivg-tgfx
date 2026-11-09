@@ -4,7 +4,7 @@
  *
  * Usage in the app's `metro.config.js`:
  *
- *   const { withKanjiSvgMetroConfig } = require('react-native-kanjivg-tgfx/metro');
+ *   const { withKanjiSvgMetroConfig } = require('react-native-nitro-kanjivg-tgfx/metro');
  *   const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');
  *
  *   const config = mergeConfig(getDefaultConfig(__dirname), {
@@ -53,7 +53,7 @@ function getDefaultTransformer() {
     }
   }
   throw new Error(
-    'react-native-kanjivg-tgfx/metro: could not resolve the default Metro ' +
+    'react-native-nitro-kanjivg-tgfx/metro: could not resolve the default Metro ' +
       'transformer. Pass { downstreamTransformerPath } to ' +
       'withKanjiSvgMetroConfig() explicitly.'
   );

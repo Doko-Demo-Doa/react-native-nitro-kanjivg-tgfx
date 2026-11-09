@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { Button, StyleSheet, Text, View } from 'react-native';
-import { Kanji, createKanjiSource } from 'react-native-kanjivg-tgfx';
-import type { KanjiHandle } from 'react-native-kanjivg-tgfx';
+import { Kanji, createKanjiSource } from 'react-native-nitro-kanjivg-tgfx';
+import type { KanjiHandle } from 'react-native-nitro-kanjivg-tgfx';
 
 // `require.context` must be called from app code: the folder path has to be a
 // static literal Metro can see at build time.
@@ -36,6 +36,11 @@ export default function App() {
           height={64}
         />
         <Kanji
+          file={require('../assets/kanji/06728.svg')}
+          width={64}
+          height={64}
+        />
+        <Kanji
           file={require('../assets/kanji/09b42.svg')}
           width={64}
           height={64}
@@ -52,6 +57,12 @@ export default function App() {
         height={160}
         stroke={{ color: '#227093', width: 4 }}
         strokes={{ 3: { color: '#d63031' } }}
+        showStrokeNumbers
+        strokeNumberColor="#495057"
+        strokeNumbers={{
+          3: { color: '#d63031', fontSize: 11 }, // matches the red stroke
+          13: { visible: false }, // demo: hide one label
+        }}
         onAnimationEnd={() => setWriting(false)}
       />
       <View style={styles.row}>
@@ -77,6 +88,14 @@ export default function App() {
           }}
         />
       </View>
+      <View style={styles.row}>
+        <Button title="0.5x speed" onPress={() => han.current?.setSpeed(0.5)} />
+        <Button title="2x speed" onPress={() => han.current?.setSpeed(2)} />
+        <Button
+          title="Slow stroke 3"
+          onPress={() => han.current?.setStrokeSpeed(3, 0.25)}
+        />
+      </View>
 
       <Text style={styles.heading}>With loops</Text>
       <Kanji
@@ -85,6 +104,7 @@ export default function App() {
         animated
         autoPlay
         loop
+        speed={1.5}
         width={96}
         height={96}
         stroke={{ color: '#4a4a7a' }}

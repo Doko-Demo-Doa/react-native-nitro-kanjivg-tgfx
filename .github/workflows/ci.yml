@@ -107,7 +107,7 @@ jobs:
       - name: Prebuild expo app for Android
         if: env.turbo_cache_hit != 1
         run: |
-          pnpm --filter react-native-kanjivg-tgfx-example expo prebuild --platform android
+          pnpm --filter react-native-nitro-kanjivg-tgfx-example expo prebuild --platform android
 
       - name: Cache Gradle
         if: env.turbo_cache_hit != 1
@@ -170,7 +170,7 @@ jobs:
       - name: Prebuild expo app for iOS
         if: env.turbo_cache_hit != 1
         run: |
-          pnpm --filter react-native-kanjivg-tgfx-example expo prebuild --platform ios
+          pnpm --filter react-native-nitro-kanjivg-tgfx-example expo prebuild --platform ios
 
       - name: Build example for iOS
         run: |

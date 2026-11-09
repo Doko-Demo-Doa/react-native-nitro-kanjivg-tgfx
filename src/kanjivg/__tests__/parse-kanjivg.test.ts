@@ -43,6 +43,27 @@ describe('parseKanjiSvg', () => {
     expect(svg.viewBox).toBe('0 0 108 108');
   });
 
+  it('extracts stroke-number label positions', () => {
+    const svg = parseKanjiSvg(SAMPLE, '09b42.svg');
+    expect(svg.strokeNumbers).toEqual([
+      { number: 1, x: 13.75, y: 43.13 },
+      { number: 2, x: 27.5, y: 18.13 },
+      { number: 3, x: 39.25, y: 14.13 },
+    ]);
+  });
+
+  it('falls back to x/y attributes for label positions', () => {
+    const xml = `<svg viewBox="0 0 108 108"><g id="kvg:StrokePaths_a"><path d="M0,0L1,1"/></g><g id="kvg:StrokeNumbers_a"><text x="5" y="6">1</text></g></svg>`;
+    expect(parseKanjiSvg(xml, 'x').strokeNumbers).toEqual([
+      { number: 1, x: 5, y: 6 },
+    ]);
+  });
+
+  it('has no stroke numbers when the group is absent', () => {
+    const xml = `<svg viewBox="0 0 108 108"><g id="kvg:StrokePaths_a"><path d="M0,0L1,1"/></g></svg>`;
+    expect(parseKanjiSvg(xml, 'x').strokeNumbers).toEqual([]);
+  });
+
   it('decodes XML entities in path data', () => {
     const svg = parseKanjiSvg(
       svgWith('<path id="a-s1" d="M1,2&amp;3&lt;4"/>', 1),
