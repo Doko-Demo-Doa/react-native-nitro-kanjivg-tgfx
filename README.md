@@ -30,7 +30,7 @@ pnpm add react-native-nitro-kanjivg-tgfx react-native-nitro-modules react-native
 pnpm add react-native-reanimated react-native-worklets
 ```
 
-For Expo, install the **Expo Go-incompatible** Nitro modules as above and use a dev client.
+Since it involves native modules, this lib is not compatible with Expo Go.
 
 ## Setup: put KanjiVG files in your app
 
