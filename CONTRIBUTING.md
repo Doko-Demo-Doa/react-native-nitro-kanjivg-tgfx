@@ -11,7 +11,7 @@ This project is a monorepo managed using [pnpm workspaces](https://pnpm.io/works
 - The library package in the root directory.
 - An example app in the `example/` directory.
 
-To get started with the project, make sure you have the correct version of [Node.js](https://nodejs.org/) installed. See the [`.nvmrc`](./.nvmrc) file for the version used in this project.
+To get started with the project, make sure you have [Node.js](https://nodejs.org/) 24 or newer installed — the same major version CI uses (see `.github/actions/setup/action.yml`).
 
 This project uses [pnpm](https://pnpm.io/), and the required version is pinned in the `packageManager` field of [`package.json`](./package.json). Enable it with [Corepack](https://pnpm.io/installation#using-corepack) (bundled with Node.js):
 
