@@ -41,14 +41,14 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Doko-Demo-Doa/react-native-kanjivg-tgfx.git"
+    "url": "git+https://github.com/Doko-Demo-Doa/react-native-nitro-kanjivg-tgfx.git"
   },
   "author": "Quan Pham <doraemonfanclub@gmail.com> (https://github.com/Doko-Demo-Doa)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/Doko-Demo-Doa/react-native-kanjivg-tgfx/issues"
+    "url": "https://github.com/Doko-Demo-Doa/react-native-nitro-kanjivg-tgfx/issues"
   },
-  "homepage": "https://github.com/Doko-Demo-Doa/react-native-kanjivg-tgfx#readme",
+  "homepage": "https://github.com/Doko-Demo-Doa/react-native-nitro-kanjivg-tgfx#readme",
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
   },
