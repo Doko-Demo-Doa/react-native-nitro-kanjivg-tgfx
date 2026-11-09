@@ -1,5 +1,3 @@
-export { multiply } from './multiply';
-
 export { Kanji } from './kanjivg/Kanji';
 export type {
   KanjiHandle,

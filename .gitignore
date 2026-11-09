@@ -79,7 +79,6 @@ ios/generated
 android/generated
 
 # React Native Nitro Modules
-nitrogen/
 
 # React Native CLI / Metro
 .bundle/
