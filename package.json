@@ -159,6 +159,13 @@
     ],
     "patchedDependencies": {
       "react-native-tgfx@0.2.0": "patches/react-native-tgfx@0.2.0.patch"
+    },
+    "overrides": {
+      "basic-ftp@<=6.2.0": ">=6.2.1",
+      "glob@>=9.0.0 <=14.0.1": ">=14.0.2",
+      "minimatch@>=7.0.0 <11.0.1": ">=11.0.1",
+      "basic-ftp@<=6.2.3": ">=6.2.4",
+      "basic-ftp@<=6.2.2": ">=6.2.3"
     }
   }
 }
